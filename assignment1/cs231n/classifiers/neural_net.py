@@ -80,8 +80,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        h1 = np.maximum(X.dot(W1) + b1, 0)
+        scores = h1.dot(W2) + b2
+        
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         # If the targets are not given then jump out, we're done
@@ -98,7 +99,14 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        o1 = np.exp(scores)
+        o1 = (o1.T / np.sum(o1, axis=1)).T
+        
+        loss = np.sum(-np.log(o1[np.arange(N), y]))
+        
+        loss /= N
+        
+        loss += reg * np.sum(W1 * W1) + reg * np.sum(W2 * W2)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -111,8 +119,21 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        o1[np.arange(N), y] -= 1
+        
+        dl_dy = np.array(o1, copy=True)
+        
+        grads['b2'] = np.zeros(self.params['b2'].shape)
+        grads['b2'] = np.sum(o1, axis=0)
+        grads['b2'] /= N
+        
+        grads['W2'] = h1.T.dot(o1) / N + 2 * reg * W2
+        
+        dl_dh = dl_dy.dot(W2.T) * (h1 > 0)
+        
+        grads['W1'] = X.T.dot(dl_dh) / N + 2 * reg * W1 
+        grads['b1'] = np.sum(dl_dh, axis=0) / N
+        
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         return loss, grads
@@ -156,7 +177,9 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            batch = np.random.choice(num_train, batch_size)
+            X_batch = X[batch]
+            y_batch = y[batch]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -172,7 +195,11 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            self.params['W2'] -= learning_rate * grads['W2']
+            self.params['b2'] -= learning_rate * grads['b2']
+                                                       
+            self.params['W1'] -= learning_rate * grads['W1']
+            self.params['b1'] -= learning_rate * grads['b1']
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -218,7 +245,18 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        N, D = X.shape
+
+        h1 = np.maximum(X.dot(W1) + b1, 0)
+        scores = h1.dot(W2) + b2
+        
+        o1 = np.exp(scores)
+        o1 = (o1.T / np.sum(o1, axis=1)).T
+        
+        y_pred = np.argmax(o1, axis=1)
+        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
